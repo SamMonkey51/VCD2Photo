@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "python",
+      "args": [
+        "C:\\\\absolute\\\\path\\\\to\\\\VCD2Photo\\\\tools\\\\vcd_mcp_server.py"
+      ]
+    }
+  }
+}

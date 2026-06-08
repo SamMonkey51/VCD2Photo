@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "/absolute/path/to/VCD2Photo/vcd-mcp",
+      "args": []
+    }
+  }
+}

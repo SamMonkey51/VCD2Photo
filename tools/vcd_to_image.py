@@ -10,15 +10,26 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from vivado_wave import (
-    DEFAULT_THEME,
-    SIGNAL_KINDS,
-    THEMES,
-    VALUE_FORMATS,
-    SignalSpec,
-    parse_vcd,
-    render_wave,
-)
+try:
+    from .vivado_wave import (
+        DEFAULT_THEME,
+        SIGNAL_KINDS,
+        THEMES,
+        VALUE_FORMATS,
+        SignalSpec,
+        parse_vcd,
+        render_wave,
+    )
+except ImportError:
+    from vivado_wave import (
+        DEFAULT_THEME,
+        SIGNAL_KINDS,
+        THEMES,
+        VALUE_FORMATS,
+        SignalSpec,
+        parse_vcd,
+        render_wave,
+    )
 
 
 UNIT_SECONDS = {

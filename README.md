@@ -29,11 +29,17 @@ VCD2Photo 是一个命令行工具，用来把 Verilog/VHDL 仿真产生的 VCD 
 .
 ├── README.md
 ├── vcd-to-image                 # 便捷命令入口
+├── vcd-mcp                      # Linux/macOS MCP stdio server 入口
+├── vcd-mcp.bat                  # Windows MCP stdio server 入口
+├── vcd-to-image.bat             # Windows CLI 入口
 ├── examples/
 │   ├── lab1_led_test.vcd         # 示例 VCD
 │   ├── report_waves.json         # 批量生成配置示例
+│   ├── mcp-config-linux.json     # MCP 客户端 Linux/macOS 配置示例
+│   ├── mcp-config-windows.json   # MCP 客户端 Windows 配置示例
 │   └── signals.txt               # 信号列表示例
 └── tools/
+    ├── vcd_mcp_server.py         # MCP stdio server
     ├── vcd_to_image.py           # 主命令行工具
     └── vivado_wave.py            # VCD 解析和 WaveDrom 渲染库
 ```
@@ -134,7 +140,7 @@ cd VCD2Photo
 确保入口脚本有执行权限：
 
 ```sh
-chmod +x vcd-to-image
+chmod +x vcd-to-image vcd-mcp
 ```
 
 运行内置示例：
@@ -540,6 +546,198 @@ python3 tools/vivado_wave.py \
   --format png,svg,pdf,json \
   --signal sys_clk=tb_led_test.sys_clk:bit \
   --signal 'led[3:0]=tb_led_test.led[3:0]:bus'
+```
+
+## 作为 MCP Server 使用
+
+VCD2Photo 也可以作为 MCP stdio server 使用，让支持 MCP 的客户端直接调用 VCD 波形查看和渲染能力。
+
+MCP 入口：
+
+- Linux/macOS: `./vcd-mcp`
+- Windows: `vcd-mcp.bat`
+- 跨平台 Python 方式: `python tools/vcd_mcp_server.py`
+- 安装为 Python 命令后: `vcd2photo-mcp`
+
+### MCP 暴露的工具
+
+`vcd_info`
+
+查看 VCD 信息，返回 timescale、时间范围、信号路径、位宽、事件数和 alias 数量。常用参数：
+
+```json
+{
+  "vcd_path": "examples/lab1_led_test.vcd",
+  "match": "timer|led|clk",
+  "active_only": true,
+  "max_signals": 20
+}
+```
+
+`vcd_render`
+
+渲染 VCD 波形图，返回生成文件路径。常用参数：
+
+```json
+{
+  "vcd_path": "examples/lab1_led_test.vcd",
+  "output_path": "out/mcp_lab1",
+  "formats": ["png", "svg", "pdf", "json"],
+  "theme": "vivado-dark",
+  "range": "0ns..310ns",
+  "title": "MCP Lab1",
+  "signals": [
+    "tb_led_test.sys_clk:bit",
+    "tb_led_test.rst_n:bit",
+    "timer=tb_led_test.dut.timer[31:0]:bus",
+    "led[3:0]=tb_led_test.led[3:0]:bus"
+  ]
+}
+```
+
+`vcd_themes`
+
+列出可用主题、总线显示格式和可覆盖的主题颜色键。
+
+### Linux/macOS MCP 配置示例
+
+把路径替换为你本机的绝对路径：
+
+```json
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "/absolute/path/to/VCD2Photo/vcd-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+也可以直接用 Python：
+
+```json
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/VCD2Photo/tools/vcd_mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+### Windows MCP 配置示例
+
+把路径替换为你本机的绝对路径：
+
+```json
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "python",
+      "args": [
+        "C:\\absolute\\path\\to\\VCD2Photo\\tools\\vcd_mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+也可以使用批处理入口：
+
+```json
+{
+  "mcpServers": {
+    "vcd2photo": {
+      "command": "C:\\absolute\\path\\to\\VCD2Photo\\vcd-mcp.bat",
+      "args": []
+    }
+  }
+}
+```
+
+项目里提供了两个模板：
+
+- `examples/mcp-config-linux.json`
+- `examples/mcp-config-windows.json`
+
+### 本地测试 MCP
+
+Linux/macOS 可以直接测试初始化和工具列表：
+
+```sh
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+  | ./vcd-mcp
+```
+
+测试 MCP 渲染：
+
+```sh
+python3 - <<'PY'
+import json
+import subprocess
+
+messages = [
+    {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0"}}},
+    {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"vcd_render","arguments":{
+        "vcd_path":"examples/lab1_led_test.vcd",
+        "output_path":"out/mcp_lab1",
+        "formats":["png","svg","json"],
+        "range":"0ns..310ns",
+        "signals":[
+            "tb_led_test.sys_clk:bit",
+            "tb_led_test.rst_n:bit",
+            "timer=tb_led_test.dut.timer[31:0]:bus",
+            "led[3:0]=tb_led_test.led[3:0]:bus"
+        ]
+    }}}
+]
+
+payload = "\n".join(json.dumps(item) for item in messages) + "\n"
+result = subprocess.run(["./vcd-mcp"], input=payload, text=True, capture_output=True, check=True)
+print(result.stdout)
+PY
+```
+
+如果成功，会生成：
+
+```text
+out/mcp_lab1.png
+out/mcp_lab1.svg
+out/mcp_lab1.json
+```
+
+## 可选：安装为 Python 命令
+
+Linux/macOS/Windows 都可以使用 pip 的 editable 安装：
+
+```sh
+python -m pip install -e .
+```
+
+安装后可以直接调用：
+
+```sh
+vcd-to-image info --vcd examples/lab1_led_test.vcd
+vcd2photo-mcp
+```
+
+如果 Linux/macOS 提示找不到 `vcd-to-image` 或 `vcd2photo-mcp`，通常是用户级 pip 安装目录不在 `PATH`。可以临时这样调用：
+
+```sh
+~/.local/bin/vcd-to-image info --vcd examples/lab1_led_test.vcd
+~/.local/bin/vcd2photo-mcp
+```
+
+或者把 `~/.local/bin` 加入 shell 配置：
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ## 常见问题

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vcd2photo"
+version = "1.0.0"
+description = "Convert VCD waveforms to report-ready PNG/SVG/PDF images and expose the renderer as an MCP server."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "SamMonkey51" }
+]
+dependencies = []
+
+[project.scripts]
+vcd-to-image = "tools.vcd_to_image:main"
+vcd2photo-mcp = "tools.vcd_mcp_server:main"
+
+[tool.setuptools.packages.find]
+include = ["tools*"]
