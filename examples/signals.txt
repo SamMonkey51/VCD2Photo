@@ -1,0 +1,4 @@
+tb_led_test.sys_clk:bit
+tb_led_test.rst_n:bit
+timer=tb_led_test.dut.timer[31:0]:bus
+led[3:0]=tb_led_test.led[3:0]:bus

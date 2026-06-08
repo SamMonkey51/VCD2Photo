@@ -1,0 +1,38 @@
+{
+  "theme": "vivado-dark",
+  "formats": ["png", "svg", "pdf", "json"],
+  "samples": 24,
+  "hscale": 2,
+  "png_scale": 1.25,
+  "dpi": 144,
+  "background": "#0b1117",
+  "value_format": "hex",
+  "max_value_chars": 8,
+  "theme_overrides": {
+    "signal": "#6df2a4",
+    "text": "#dbe7f3"
+  },
+  "waves": [
+    {
+      "title": "Lab1 LED流水灯",
+      "vcd": "examples/lab1_led_test.vcd",
+      "output": "out/lab1_led_test",
+      "range": "0ns..310ns",
+      "signals": [
+        "sys_clk=tb_led_test.sys_clk:bit",
+        "rst_n=tb_led_test.rst_n:bit",
+        "timer=tb_led_test.dut.timer[31:0]:bus",
+        "led[3:0]=tb_led_test.led[3:0]:bus"
+      ]
+    },
+    {
+      "title": "Lab1 LED流水灯 - signals-file",
+      "vcd": "examples/lab1_led_test.vcd",
+      "output": "out/lab1_from_file",
+      "signals_file": ["examples/signals.txt"],
+      "range": "0ns..310ns",
+      "theme": "report-light",
+      "background": "white"
+    }
+  ]
+}
